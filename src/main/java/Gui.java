@@ -6,6 +6,7 @@ import java.io.File;
 import java.time.Duration;
 import javax.swing.JFileChooser;
 import javax.swing.Timer;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
@@ -26,6 +27,7 @@ public class Gui extends javax.swing.JFrame {
 	private static final int PATH_COLUM = 5;
 	
 	private BassAudioEngine audioEngine;
+	private Timer progressTimer;
 	
 	/**
 	 * Creates new form NewJFrame
@@ -35,6 +37,11 @@ public class Gui extends javax.swing.JFrame {
 		this.audioEngine = audioEngine;
 		
 		initComponents();
+		
+		FileNameExtensionFilter ff = new FileNameExtensionFilter("Audio Files", "wav", "mp3", "ogg", "flac", "mod", "xm", "s3m");
+		jFileChooser1.setFileFilter(ff);
+		jFileChooser1.setMultiSelectionEnabled(true);
+		
 		this.audioEngine.setVolume(jSlider2.getValue());
 		jPanel2.add(menuBar, java.awt.BorderLayout.CENTER);
 		jPanel1.add(jPanel2, java.awt.BorderLayout.NORTH);
@@ -98,7 +105,11 @@ public class Gui extends javax.swing.JFrame {
                 jMenu2.setText("Edit");
                 menuBar.add(jMenu2);
 
+                jFileChooser1.setFileFilter(null);
+
                 setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+                setTitle("JGroove");
+                setPreferredSize(new java.awt.Dimension(800, 450));
                 addWindowListener(new java.awt.event.WindowAdapter() {
                         public void windowClosing(java.awt.event.WindowEvent evt) {
                                 formWindowClosing(evt);
@@ -182,6 +193,7 @@ public class Gui extends javax.swing.JFrame {
 
                 getContentPane().add(jPanel1, java.awt.BorderLayout.NORTH);
 
+                jTable1.setFont(new java.awt.Font("Noto Sans", 0, 14)); // NOI18N
                 jTable1.setModel(new javax.swing.table.DefaultTableModel(
                         new Object [][] {
 
@@ -198,6 +210,7 @@ public class Gui extends javax.swing.JFrame {
                                 return canEdit [columnIndex];
                         }
                 });
+                jTable1.setRowHeight(25);
                 jTable1.setShowGrid(false);
                 jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
                         public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -213,11 +226,30 @@ public class Gui extends javax.swing.JFrame {
                 pack();
         }// </editor-fold>//GEN-END:initComponents
 
+	private AudioType checkAudioType(String filePath) {
+
+		int index = filePath.lastIndexOf(".");
+		String ext = (index == -1) ? "" : filePath.substring(index + 1);
+
+		if (ext.equalsIgnoreCase("s3m") || ext.equalsIgnoreCase("xm") || ext.equalsIgnoreCase("mod") || ext.equalsIgnoreCase("it")) {
+			
+			return AudioType.MODULE;
+		} 
+		
+		return AudioType.STREAMED;
+	}
+	
 	private void playTrack() {
 		
+		if (progressTimer != null) {
+			
+			progressTimer.stop();
+		}
+		
 		audioEngine.play();
-
-		Timer timer = new Timer(100, new ActionListener() {
+		
+		//set up the thread that updates the JSlider
+		progressTimer = new Timer(100, new ActionListener() {
 		
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -226,7 +258,6 @@ public class Gui extends javax.swing.JFrame {
 				if (audioEngine.isPlaying() == Bass.BASS_ACTIVE_PLAYING) {
 					
 					long currentPos = audioEngine.getPosition();
-
 					long totalLen = audioEngine.getLength();
 				
 					if (totalLen > 0) {
@@ -243,12 +274,13 @@ public class Gui extends javax.swing.JFrame {
 			}
 		});
 		
-		timer.start();
+		//start the tread
+		progressTimer.start();
 	}
 	
         private void jMediaButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMediaButton1ActionPerformed
 		
-		playTrack();
+		//playTrack();
         }//GEN-LAST:event_jMediaButton1ActionPerformed
 
         private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
@@ -283,36 +315,58 @@ public class Gui extends javax.swing.JFrame {
         private void openFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openFileActionPerformed
 		
 		int result = jFileChooser1.showOpenDialog(this);
-
+		
 		if (result == JFileChooser.APPROVE_OPTION) {
 			
-			File file = jFileChooser1.getSelectedFile();
-			System.out.println(file.getAbsolutePath());
-			// Get the model and cast it
+			File[] files = jFileChooser1.getSelectedFiles();
 			DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
-   			
-			try {
 			
-				// 1. Read the file (this parses the headers)
-				AudioFile f = AudioFileIO.read(file);
-				    
-				// 2. Access the Metadata "Tag"
-				Tag tag = f.getTag();
-				    
-				// 3. Extract the data using FieldKeys
-				String track = tag.getFirst(FieldKey.TRACK);
-				String artist = tag.getFirst(FieldKey.ARTIST);
-				String title  = tag.getFirst(FieldKey.TITLE);
-				String album  = tag.getFirst(FieldKey.ALBUM);
-				String year = tag.getFirst(FieldKey.YEAR);
-	    
-				// 4. Get the duration (handy for your playlist table!)
-				String length = formatTime(f.getAudioHeader().getTrackLength());
-				model.addRow(new Object[]{track, artist, album, title, length, file.getAbsolutePath()});
+			for (File file : files) {
+				
+				if (file.isFile()) {
+					
+					AudioType aType = checkAudioType(file.getName());
+					
+					if (aType == AudioType.MODULE) {
+						
+						audioEngine.loadFile(file.getAbsolutePath(), aType);
+						long len = audioEngine.getLength();
+						double time = audioEngine.lengthInSeconds(len);
+						int pos = file.getName().lastIndexOf(".");
+						String title2 = file.getName().substring(0, pos);
 
-			} catch (Exception ex) {
+						String title1 = audioEngine.getModuleTitle();
+						String artist = audioEngine.getModuleAuthor();
+						
+						model.addRow(new Object[]{"", artist, "", title1, formatTime((long) time), file.getAbsolutePath()});
 
-				System.err.println("JAudioTagger could not read file : " + ex.getMessage());
+					} else if (aType == AudioType.STREAMED) {
+
+						try {
+						
+							// 1. Read the file (this parses the headers)
+							AudioFile f = AudioFileIO.read(file);
+							    
+							// 2. Access the Metadata "Tag"
+							Tag tag = f.getTag();
+							    
+							// 3. Extract the data using FieldKeys
+							String track = tag.getFirst(FieldKey.TRACK);
+							String artist = tag.getFirst(FieldKey.ARTIST);
+							String title  = tag.getFirst(FieldKey.TITLE);
+							String album  = tag.getFirst(FieldKey.ALBUM);
+							String year = tag.getFirst(FieldKey.YEAR);
+				    
+							// 4. Get the duration (handy for your playlist table!)
+							String length = formatTime(f.getAudioHeader().getTrackLength());
+							model.addRow(new Object[]{track, artist, album, title, length, file.getAbsolutePath()});
+
+						} catch (Exception ex) {
+
+							System.err.println("JAudioTagger could not read file : " + ex.getMessage());
+						}
+					}
+				}
 			}
 		}
         }//GEN-LAST:event_openFileActionPerformed
@@ -323,11 +377,23 @@ public class Gui extends javax.swing.JFrame {
 			
 			DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
 			int row = jTable1.getSelectedRow();
-			String v = (String) model.getValueAt(row, 5);
-			audioEngine.loadFile(v);
-			audioEngine.setVolume(jSlider2.getValue());
+			String filePath = (String) model.getValueAt(row, 5);
+			AudioType aType = checkAudioType(filePath);
 			
-			this.playTrack();
+			//  play module
+			if (aType == AudioType.MODULE) {
+				
+				audioEngine.loadFile(filePath, AudioType.MODULE);
+				audioEngine.setVolume(jSlider2.getValue());
+				this.playTrack();
+				
+			//play streamed audio file
+			} else if (aType == AudioType.STREAMED) {
+				
+				audioEngine.loadFile(filePath, AudioType.STREAMED);
+				audioEngine.setVolume(jSlider2.getValue());
+				this.playTrack();
+			}
 		}
         }//GEN-LAST:event_jTable1MouseClicked
 	
@@ -346,7 +412,6 @@ public class Gui extends javax.swing.JFrame {
 		return String.format("%02d:%02d", m, s);
 	}
 
-	
         // Variables declaration - do not modify//GEN-BEGIN:variables
         private javax.swing.JMenu fileMenu;
         private javax.swing.JFileChooser jFileChooser1;
