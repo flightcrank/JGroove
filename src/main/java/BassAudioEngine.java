@@ -1,4 +1,7 @@
 
+import com.sun.jna.Pointer;
+
+
 
 /**
  *
@@ -8,8 +11,24 @@
 public class BassAudioEngine {
 
 	private int fileHandle = 0;
-		
+	private Bass.SYNCPROC endSong;
+	private SongListener endSongListener;
+	
 	public BassAudioEngine() {
+
+		endSong = new Bass.SYNCPROC() {
+			
+			@Override
+			public void invoke(int handle, int channel, int data, Pointer user) {
+				
+				System.out.println("Bass end of song callback triggered");
+				
+				if (endSongListener != null) {
+					
+					endSongListener.onSongEnded();
+				}
+			}
+		};
 
 		if (!Bass.INSTANCE.BASS_Init(-1, 48000, 16384, null, null)) {
 			
@@ -26,6 +45,16 @@ public class BassAudioEngine {
 			
 			System.out.println("FLAC support enabled.");
 		} 
+	}
+	
+	public void addSongListener(SongListener listener) {
+		
+		this.endSongListener = listener;
+	}
+	
+	public Bass.SYNCPROC getCallback(){
+
+		return this.endSong;
 	}
 	
 	public void freeHandle() {
@@ -74,6 +103,17 @@ public class BassAudioEngine {
 				
 				System.out.println("New stream handle created successfully");
 			}
+		}
+
+		int handle = Bass.INSTANCE.BASS_ChannelSetSync(fileHandle, Bass.BASS_SYNC_END, 0, endSong, null);
+
+		if (handle != 0 ) {
+
+			System.out.println("Call back registered");
+			
+		} else {
+			
+			System.err.println("Callback function error: " + Bass.INSTANCE.BASS_ErrorGetCode());
 		}
 	}
 	

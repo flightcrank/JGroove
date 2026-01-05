@@ -1,12 +1,8 @@
 
-import com.sun.jna.DefaultTypeMapper;
+import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.win32.StdCallFunctionMapper;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
@@ -47,6 +43,34 @@ public interface Bass extends Library {
 	int BASS_TAG_MUSIC_INST    = 0x10100; // + instrument #, name : ANSI string
 	int BASS_TAG_MUSIC_CHAN    = 0x10200; // + channel #, name : ANSI string
 	int BASS_TAG_MUSIC_SAMPLE  = 0x10300; // + sample #, name : ANSI string
+
+	// BASS_ChannelSetSync types
+	int BASS_SYNC_POS = 0;
+	int BASS_SYNC_END = 2;
+	int BASS_SYNC_META = 4;
+	int BASS_SYNC_SLIDE = 5;
+	int BASS_SYNC_STALL = 6;
+	int BASS_SYNC_DOWNLOAD = 7;
+	int BASS_SYNC_FREE = 8;
+	int BASS_SYNC_SETPOS = 11;
+	int BASS_SYNC_MUSICPOS = 10;
+	int BASS_SYNC_MUSICINST = 1;
+	int BASS_SYNC_MUSICFX = 3;
+	int BASS_SYNC_OGG_CHANGE = 12;
+	int BASS_SYNC_ATTRIB = 13;
+	int BASS_SYNC_DEV_FAIL = 14;
+	int BASS_SYNC_DEV_FORMAT = 15;
+	int BASS_SYNC_POS_RAW = 16;
+
+	// BASS_ChannelSetSync Flags
+	int BASS_SYNC_THREAD = 0x20000000; // call sync in other thread
+	int BASS_SYNC_MIXTIME = 0x40000000; // sync at mixtime
+	int BASS_SYNC_ONETIME = 0x80000000; // sync only once
+
+	public interface SYNCPROC extends Callback {
+		
+		void invoke(int handle, int channel, int data, Pointer user);
+	}
 	
         boolean BASS_Init(int device, int freq, int flags, Pointer win, Pointer clsid);
         int BASS_StreamCreateFile(int mem, String file, long offset, long length, int flags);
@@ -63,6 +87,7 @@ public interface Bass extends Library {
 	long BASS_ChannelGetLength(int handle, int mode);
 	int BASS_ChannelIsActive(int handle);
 	long BASS_ChannelGetPosition(int handle, int mode);
+	int BASS_ChannelSetSync(int handle, int type, long param, SYNCPROC proc, Pointer user);
 
 	int BASS_MusicLoad(int filetype, Object file, long offset, int length, int flags, int freq);
 	boolean BASS_MusicFree(int handle);

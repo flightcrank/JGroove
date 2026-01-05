@@ -3,7 +3,7 @@
  * @author karma
  */
 
-public class JMP {
+public class JGroove {
 
     public static void main(String[] args) {
      		
