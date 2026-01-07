@@ -1,9 +1,18 @@
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFileChooser;
+import javax.swing.JPanel;
+import javax.swing.JTable;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
@@ -31,7 +40,8 @@ public class Gui extends javax.swing.JFrame {
 		this.audioEngine = audioEngine;
 		
 		initComponents();
-
+		
+		jTabbedPane1.addTab("new tab", new JPanel());
 		TableColumn col = jTable1.getColumnModel().getColumn(5);	
 		jTable1.removeColumn(col);
 		
@@ -41,13 +51,16 @@ public class Gui extends javax.swing.JFrame {
 		jTable1.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
 		jTable1.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
 			
-		FileNameExtensionFilter ff = new FileNameExtensionFilter("Audio Files", "wav", "mp3", "ogg", "flac", "mod", "xm", "s3m");
+		FileNameExtensionFilter ff = new FileNameExtensionFilter("Audio Files", "wav", "mp3", "ogg", "flac", "mod", "xm", "s3m", "it");
 		jFileChooser1.setFileFilter(ff);
 		jFileChooser1.setMultiSelectionEnabled(true);
 		
 		this.audioEngine.setVolume(jSlider2.getValue());
 		jPanel2.add(menuBar, java.awt.BorderLayout.CENTER);
 		jPanel1.add(jPanel2, java.awt.BorderLayout.NORTH);
+
+		File[] files = loadPlaylist();
+		openFiles(files);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -285,6 +298,7 @@ public class Gui extends javax.swing.JFrame {
 		
 		//free the System resources used by libBass	
 		audioEngine.cleanup();
+		saveTabPlaylist(jTable1);
         }//GEN-LAST:event_formWindowClosing
 
         private void searchTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchTextFieldActionPerformed
@@ -317,56 +331,8 @@ public class Gui extends javax.swing.JFrame {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			
 			File[] files = jFileChooser1.getSelectedFiles();
-			DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
 			
-			for (File file : files) {
-				
-				if (file.isFile()) {
-					
-					AudioType aType = checkAudioType(file.getName());
-					numRows++;
-					
-					if (aType == AudioType.MODULE) {
-						
-						audioEngine.loadFile(file.getAbsolutePath(), aType);
-						long len = audioEngine.getLength();
-						double time = audioEngine.lengthInSeconds(len);
-						int pos = file.getName().lastIndexOf(".");
-						String title2 = file.getName().substring(0, pos);
-
-						String title1 = audioEngine.getModuleTitle();
-						String artist = audioEngine.getModuleAuthor();
-						
-						model.addRow(new Object[]{"", artist, "", title1, formatTime((long) time), file.getAbsolutePath()});
-
-					} else if (aType == AudioType.STREAMED) {
-
-						try {
-						
-							// 1. Read the file (this parses the headers)
-							AudioFile f = AudioFileIO.read(file);
-							    
-							// 2. Access the Metadata "Tag"
-							Tag tag = f.getTag();
-							    
-							// 3. Extract the data using FieldKeys
-							String track = tag.getFirst(FieldKey.TRACK);
-							String artist = tag.getFirst(FieldKey.ARTIST);
-							String title  = tag.getFirst(FieldKey.TITLE);
-							String album  = tag.getFirst(FieldKey.ALBUM);
-							String year = tag.getFirst(FieldKey.YEAR);
-				    
-							// 4. Get the duration (handy for your playlist table!)
-							String length = formatTime(f.getAudioHeader().getTrackLength());
-							model.addRow(new Object[]{track, artist, album, title, length, file.getAbsolutePath()});
-
-						} catch (Exception ex) {
-
-							System.err.println("JAudioTagger could not read file : " + ex.getMessage());
-						}
-					}
-				}
-			}
+			openFiles(files);
 		}
         }//GEN-LAST:event_openFileActionPerformed
 
@@ -447,6 +413,111 @@ public class Gui extends javax.swing.JFrame {
 		}
 		
 		return String.format("%02d:%02d", m, s);
+	}
+
+	public void openFiles(File[] files) {
+		
+		DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+		
+		for (File file : files) {
+			
+			if (file.isFile()) {
+				
+				AudioType aType = checkAudioType(file.getName());
+				numRows++;
+				
+				if (aType == AudioType.MODULE) {
+					
+					audioEngine.loadFile(file.getAbsolutePath(), aType);
+					long len = audioEngine.getLength();
+					double time = audioEngine.lengthInSeconds(len);
+					int pos = file.getName().lastIndexOf(".");
+					String title2 = file.getName().substring(0, pos);
+
+					String title1 = audioEngine.getModuleTitle();
+					String artist = audioEngine.getModuleAuthor();
+					
+					model.addRow(new Object[]{"", artist, "", title1, formatTime((long) time), file.getAbsolutePath()});
+
+				} else if (aType == AudioType.STREAMED) {
+
+					try {
+					
+						// 1. Read the file (this parses the headers)
+						AudioFile f = AudioFileIO.read(file);
+						    
+						// 2. Access the Metadata "Tag"
+						Tag tag = f.getTag();
+						    
+						// 3. Extract the data using FieldKeys
+						String track = tag.getFirst(FieldKey.TRACK);
+						String artist = tag.getFirst(FieldKey.ARTIST);
+						String title  = tag.getFirst(FieldKey.TITLE);
+						String album  = tag.getFirst(FieldKey.ALBUM);
+						String year = tag.getFirst(FieldKey.YEAR);
+			    
+						// 4. Get the duration (handy for your playlist table!)
+						String length = formatTime(f.getAudioHeader().getTrackLength());
+						model.addRow(new Object[]{track, artist, album, title, length, file.getAbsolutePath()});
+
+					} catch (Exception ex) {
+
+						System.err.println("JAudioTagger could not read file : " + ex.getMessage());
+					}
+				}
+			}
+		}
+	}
+	
+	private void saveTabPlaylist(JTable table) {
+		
+		String dest = System.getProperty("user.home") + File.separator + "pl.m3u";
+		Path path = Paths.get(dest);
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+	
+		try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+			
+			// Loop through rows
+			for (int i = 0; i < table.getRowCount(); i++) {
+
+				//convert the jtable row index on the screen to the model index in the jtable
+				int modelRowIndex = table.convertRowIndexToModel(i);
+				
+				Object value = model.getValueAt(modelRowIndex, 5);
+				System.out.println(value);
+				writer.write(String.valueOf(value));
+				writer.newLine();
+			}
+		
+		} catch (IOException e) {
+			
+			e.printStackTrace();
+		}
+	}
+
+	private File[] loadPlaylist() {
+		
+		ArrayList<File> f = new ArrayList<>();
+		
+		try {
+			Path path = Paths.get(System.getProperty("user.home"), "pl.m3u");
+			    
+			// Reads every line into a List
+			List<String> lines = Files.readAllLines(path);
+			    
+			for (String line : lines) {
+			
+				// Here you would split the line and add it back to your JTable model
+				System.out.println(line);
+				f.add(new File(line));
+			}
+
+		} catch (IOException e) {
+		
+			e.printStackTrace();
+		}
+
+		return f.toArray(new File[0]);
 	}
 
         // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -76,7 +76,7 @@ public class BassAudioEngine {
 
 		if (aType == AudioType.MODULE) {
 			
-			int flags = Bass.BASS_MUSIC_PRESCAN | Bass.BASS_MUSIC_POSRESETEX | Bass.BASS_MUSIC_RAMPS | Bass.BASS_MUSIC_FLOAT;
+			int flags = Bass.BASS_MUSIC_PRESCAN | Bass.BASS_MUSIC_POSRESETEX | Bass.BASS_MUSIC_RAMPS | Bass.BASS_MUSIC_FLOAT | Bass.BASS_MUSIC_STOPBACK;
 			
 			//create module handle
 			fileHandle = Bass.INSTANCE.BASS_MusicLoad(Bass.BASS_FILE_NAME, path, 0, 0, flags, 0);
