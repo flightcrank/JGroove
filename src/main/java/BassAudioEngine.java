@@ -1,13 +1,6 @@
 
 import com.sun.jna.Pointer;
 
-
-
-/**
- *
- * @author karma
- */
-
 public class BassAudioEngine {
 
 	private int fileHandle = 0;
@@ -33,18 +26,18 @@ public class BassAudioEngine {
 		if (!Bass.INSTANCE.BASS_Init(-1, 48000, 16384, null, null)) {
 			
 			System.out.println("Init failed. Error: " + Bass.INSTANCE.BASS_ErrorGetCode());
-		} 
-			
+		}
+
 		int flacPlugin = Bass.INSTANCE.BASS_PluginLoad("libbassflac.so", 0);
-		
+
 		if (flacPlugin == 0) {
-		
-			System.err.println("FLAC plugin failed to load: " + Bass.INSTANCE.BASS_ErrorGetCode());
-		
-		} else {
+		    
+			System.err.println("FLAC plugin failed to load BASS Error: " + Bass.INSTANCE.BASS_ErrorGetCode());
 			
-			System.out.println("FLAC support enabled.");
-		} 
+		} else {
+
+			System.out.println("FLAC plugin enabled");
+		}
 	}
 	
 	public void addSongListener(SongListener listener) {

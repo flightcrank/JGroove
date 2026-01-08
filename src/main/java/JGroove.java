@@ -6,7 +6,9 @@
 public class JGroove {
 
     public static void main(String[] args) {
-     		
+		
+		System.setProperty("jna.library.path", ".");
+	    
 		//initilise the BassAudioEngine
 		BassAudioEngine audioEngine = new BassAudioEngine();
 		
@@ -20,6 +22,7 @@ public class JGroove {
 					break;
 				}
 			}
+		
 		} catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
 		}
 

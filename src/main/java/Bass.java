@@ -129,6 +129,7 @@ public interface Bass extends Library {
 	
         int BASS_ErrorGetCode();
 
+
 	int BASS_PluginLoad(String file, int flags);
 	boolean BASS_PluginFree(int handle);
 	Pointer BASS_PluginGetInfo(int handle);

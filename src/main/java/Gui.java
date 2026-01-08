@@ -1,4 +1,5 @@
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -10,8 +11,11 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -41,7 +45,8 @@ public class Gui extends javax.swing.JFrame {
 		
 		initComponents();
 		
-		jTabbedPane1.addTab("new tab", new JPanel());
+		jTabbedPane1.addTab("+", new JPanel());
+		
 		TableColumn col = jTable1.getColumnModel().getColumn(5);	
 		jTable1.removeColumn(col);
 		
@@ -60,7 +65,7 @@ public class Gui extends javax.swing.JFrame {
 		jPanel1.add(jPanel2, java.awt.BorderLayout.NORTH);
 
 		File[] files = loadPlaylist();
-		openFiles(files);
+		openFiles(files, jTable1);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -74,6 +79,10 @@ public class Gui extends javax.swing.JFrame {
                 openFile = new javax.swing.JMenuItem();
                 jMenu2 = new javax.swing.JMenu();
                 jFileChooser1 = new javax.swing.JFileChooser();
+                addTabButton = new javax.swing.JButton();
+                jPopupMenu1 = new javax.swing.JPopupMenu();
+                jMenuItem1 = new javax.swing.JMenuItem();
+                jMenuItem2 = new javax.swing.JMenuItem();
                 jPanel1 = new javax.swing.JPanel();
                 jToolBar1 = new javax.swing.JToolBar();
                 jMediaButton1 = new JMediaButton();
@@ -117,6 +126,31 @@ public class Gui extends javax.swing.JFrame {
                 menuBar.add(jMenu2);
 
                 jFileChooser1.setFileFilter(null);
+
+                addTabButton.setText("+");
+                addTabButton.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+                addTabButton.setPreferredSize(new java.awt.Dimension(35, 20));
+
+                jMenuItem1.setText("Remove from playlist");
+                jMenuItem1.addMouseListener(new java.awt.event.MouseAdapter() {
+                        public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                jMenuItem1MouseClicked(evt);
+                        }
+                });
+                jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                jMenuItem1ActionPerformed(evt);
+                        }
+                });
+                jPopupMenu1.add(jMenuItem1);
+
+                jMenuItem2.setText("Move to new playlist");
+                jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                jMenuItem2ActionPerformed(evt);
+                        }
+                });
+                jPopupMenu1.add(jMenuItem2);
 
                 setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
                 setTitle("JGroove");
@@ -204,6 +238,12 @@ public class Gui extends javax.swing.JFrame {
 
                 getContentPane().add(jPanel1, java.awt.BorderLayout.NORTH);
 
+                jTabbedPane1.addChangeListener(new javax.swing.event.ChangeListener() {
+                        public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                                jTabbedPane1StateChanged(evt);
+                        }
+                });
+
                 jTable1.setFont(new java.awt.Font("Noto Sans", 0, 14)); // NOI18N
                 jTable1.setModel(new javax.swing.table.DefaultTableModel(
                         new Object [][] {
@@ -221,22 +261,69 @@ public class Gui extends javax.swing.JFrame {
                                 return canEdit [columnIndex];
                         }
                 });
+                jTable1.setDoubleBuffered(true);
                 jTable1.setRowHeight(25);
                 jTable1.setShowGrid(false);
                 jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
                         public void mouseClicked(java.awt.event.MouseEvent evt) {
                                 jTable1MouseClicked(evt);
                         }
+                        public void mousePressed(java.awt.event.MouseEvent evt) {
+                                jTable1MousePressed(evt);
+                        }
                 });
                 jScrollPane1.setViewportView(jTable1);
+                if (jTable1.getColumnModel().getColumnCount() > 0) {
+                        jTable1.getColumnModel().getColumn(0).setMinWidth(50);
+                        jTable1.getColumnModel().getColumn(0).setMaxWidth(100);
+                        jTable1.getColumnModel().getColumn(4).setMinWidth(50);
+                        jTable1.getColumnModel().getColumn(4).setMaxWidth(100);
+                }
 
-                jTabbedPane1.addTab("tab1", jScrollPane1);
+                jTabbedPane1.addTab("Playlist", jScrollPane1);
 
                 getContentPane().add(jTabbedPane1, java.awt.BorderLayout.CENTER);
 
                 pack();
         }// </editor-fold>//GEN-END:initComponents
 
+	private void setPlaylistmodel(JTable table) {
+		
+		table.setFont(new java.awt.Font("Noto Sans", 0, 14)); // NOI18N
+                table.setModel(new javax.swing.table.DefaultTableModel(
+                        new Object [][] {
+
+                        },
+                        new String [] {
+                                "Track", "Artist", "Album", "Title", "Length", "Path"
+                        }
+                ) {
+                        boolean[] canEdit = new boolean [] {
+                                false, false, false, false, false, false
+                        };
+
+                        public boolean isCellEditable(int rowIndex, int columnIndex) {
+                                return canEdit [columnIndex];
+                        }
+                });
+		table.setDoubleBuffered(true);
+                table.setRowHeight(25);
+                table.setShowGrid(false);
+		
+                table.addMouseListener(new java.awt.event.MouseAdapter() {
+                        public void mouseClicked(java.awt.event.MouseEvent evt) {
+                                jTable1MouseClicked(evt);
+                        }
+                });
+                
+		if (table.getColumnModel().getColumnCount() > 0) {
+                        table.getColumnModel().getColumn(0).setMinWidth(50);
+                        table.getColumnModel().getColumn(0).setMaxWidth(100);
+                        table.getColumnModel().getColumn(4).setMinWidth(50);
+                        table.getColumnModel().getColumn(4).setMaxWidth(100);
+                }	
+	}
+	
 	private AudioType checkAudioType(String filePath) {
 
 		int index = filePath.lastIndexOf(".");
@@ -290,15 +377,34 @@ public class Gui extends javax.swing.JFrame {
 	}
 	
         private void jMediaButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMediaButton1ActionPerformed
+
+		if (jMediaButton1.getmType() == JMediaButton.MediaType.PLAY) {
+			
+			playSelectedTrack();
+			jMediaButton1.setmType(JMediaButton.MediaType.PAUSE);
+		}
 		
-		//playTrack();
         }//GEN-LAST:event_jMediaButton1ActionPerformed
 
         private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
 		
 		//free the System resources used by libBass	
 		audioEngine.cleanup();
-		saveTabPlaylist(jTable1);
+		
+		for (int i = 0; i < jTabbedPane1.getTabCount() - 1; i++) {
+
+			String tabTitle = jTabbedPane1.getTitleAt(i);
+			Component comp = jTabbedPane1.getSelectedComponent();
+			JScrollPane sp = (JScrollPane) comp;
+			JTable table = (JTable) sp.getViewport().getView();
+			DefaultTableModel model = (DefaultTableModel) table.getModel();
+
+			String name = String.format("%s_%d.m3u",tabTitle, i);
+			
+			saveTabPlaylist(name, jTable1);
+			
+			System.out.println(name);
+		}
         }//GEN-LAST:event_formWindowClosing
 
         private void searchTextFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchTextFieldActionPerformed
@@ -306,8 +412,14 @@ public class Gui extends javax.swing.JFrame {
         }//GEN-LAST:event_searchTextFieldActionPerformed
 
         private void jMediaButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMediaButton2ActionPerformed
-                // TODO add your handling code here:
+		
 		audioEngine.stop();
+
+		if (jMediaButton1.getmType() == JMediaButton.MediaType.PAUSE) {
+
+			jMediaButton1.setmType(JMediaButton.MediaType.PLAY);
+			jMediaButton1.repaint();
+		}		
         }//GEN-LAST:event_jMediaButton2ActionPerformed
 
         private void jSlider1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSlider1StateChanged
@@ -331,8 +443,11 @@ public class Gui extends javax.swing.JFrame {
 		if (result == JFileChooser.APPROVE_OPTION) {
 			
 			File[] files = jFileChooser1.getSelectedFiles();
+			Component comp = jTabbedPane1.getSelectedComponent();
+			JScrollPane sp = (JScrollPane) comp;
+			JTable table = (JTable) sp.getViewport().getView();
 			
-			openFiles(files);
+			openFiles(files, table);
 		}
         }//GEN-LAST:event_openFileActionPerformed
 
@@ -340,65 +455,127 @@ public class Gui extends javax.swing.JFrame {
 		
 		if (evt.getClickCount() == 2) {
 			
-			DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
-			int rowNum = jTable1.getSelectedRow();
-			String filePath = (String) model.getValueAt(rowNum, 5);
-			AudioType aType = checkAudioType(filePath);
-			this.currentRow = rowNum;
-			this.numRows = jTable1.getRowCount() - 1;
-
-			audioEngine.addSongListener(new SongListener() {
-				
-				@Override
-				public void onSongEnded() {
-					
-					if (currentRow < numRows) {
-						
-						currentRow++;
-						
-						String nextFilePath = (String) model.getValueAt(currentRow, 5);
-						AudioType nAType = checkAudioType(nextFilePath);
-
-						System.out.println("Play file: "+ nextFilePath);
-						
-						//  play module
-						if (aType == AudioType.MODULE) {
-							
-							audioEngine.loadFile(nextFilePath, AudioType.MODULE);
-							audioEngine.setVolume(jSlider2.getValue());
-							playTrack();
-							
-						//play streamed audio file
-						} else if (aType == AudioType.STREAMED) {
-							
-							audioEngine.loadFile(nextFilePath, AudioType.STREAMED);
-							audioEngine.setVolume(jSlider2.getValue());
-							playTrack();
-						}
-					
-					} else {
-					
-						System.out.println("Last track in playlist. No more songs to play");
-					}
-				}
-			});
-			
-			//  play module
-			if (aType == AudioType.MODULE) {
-				
-				audioEngine.loadFile(filePath, AudioType.MODULE);
-				audioEngine.setVolume(jSlider2.getValue());
-				this.playTrack();
-				
-			//play streamed audio file
-			} else if (aType == AudioType.STREAMED) {
-				
-				audioEngine.loadFile(filePath, AudioType.STREAMED);
-				audioEngine.setVolume(jSlider2.getValue());
-				this.playTrack();
-			}
+			playSelectedTrack();
+			jMediaButton1.setmType(JMediaButton.MediaType.PAUSE);
+			jMediaButton1.repaint();
 		}
         }//GEN-LAST:event_jTable1MouseClicked
+
+        private void jTabbedPane1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPane1StateChanged
+
+		int selectedIndex = jTabbedPane1.getSelectedIndex();
+		String tabTitle = jTabbedPane1.getTitleAt(selectedIndex);
+		    
+		System.out.println("User clicked on tab index: " + selectedIndex + " (Title: " + tabTitle + ")");
+		    
+		if (tabTitle.equals("+")) {
+			
+			System.out.println("Make new tab");
+			
+			JTable newTable = new JTable();
+			setPlaylistmodel(newTable);
+			JScrollPane scrollPane = new JScrollPane(newTable);
+
+			newTable.addMouseListener(new java.awt.event.MouseAdapter() {
+                        	
+				public void mouseClicked(java.awt.event.MouseEvent evt) {
+					
+					jTable1MouseClicked(evt);
+				}
+                        	
+				public void mousePressed(java.awt.event.MouseEvent evt) {
+					
+					jTable1MousePressed(evt);
+				}
+			});
+
+			jTabbedPane1.removeTabAt(selectedIndex);
+			jTabbedPane1.addTab("new playlist", scrollPane);
+			jTabbedPane1.addTab("+", new JPanel());
+			jTabbedPane1.setSelectedIndex(selectedIndex);
+		}
+        }//GEN-LAST:event_jTabbedPane1StateChanged
+
+        private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+		
+		Component comp = jTabbedPane1.getSelectedComponent();
+		JScrollPane sp = (JScrollPane) comp;
+		JTable table = (JTable) sp.getViewport().getView();
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+		
+		int[] selectedRows = table.getSelectedRows();
+		
+		// Loop backwards to keep indices stable
+		for (int i = selectedRows.length - 1; i >= 0; i--) {
+			
+			int modelRow = table.convertRowIndexToModel(selectedRows[i]);
+			model.removeRow(modelRow);
+		}
+        }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+        private void jTable1MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MousePressed
+		
+		if (evt.isPopupTrigger()) {
+			
+			System.out.println("popup menu tirggered");
+			jPopupMenu1.show(evt.getComponent(), evt.getX(), evt.getY());
+		}
+        }//GEN-LAST:event_jTable1MousePressed
+
+        private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+                // TODO add your handling code here:
+        }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+        private void jMenuItem1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jMenuItem1MouseClicked
+                // TODO add your handling code here:
+        }//GEN-LAST:event_jMenuItem1MouseClicked
+
+	private void addSongListener() {
+		
+		Component comp = jTabbedPane1.getSelectedComponent();
+		JScrollPane sp = (JScrollPane) comp;
+		JTable table = (JTable) sp.getViewport().getView();
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+		
+		audioEngine.addSongListener(new SongListener() {
+			
+			@Override
+			public void onSongEnded() {
+				
+				if (currentRow < numRows) {
+					
+					currentRow++;
+					
+					String nextFilePath = (String) model.getValueAt(currentRow, 5);
+					AudioType nAType = checkAudioType(nextFilePath);
+					table.setRowSelectionInterval(currentRow, currentRow);
+
+					System.out.println("Play file: "+ nextFilePath);
+					
+					//  play module
+					if (nAType == AudioType.MODULE) {
+						
+						audioEngine.loadFile(nextFilePath, AudioType.MODULE);
+						audioEngine.setVolume(jSlider2.getValue());
+						playTrack();
+						
+					//play streamed audio file
+					} else if (nAType == AudioType.STREAMED) {
+						
+						audioEngine.loadFile(nextFilePath, AudioType.STREAMED);
+						audioEngine.setVolume(jSlider2.getValue());
+						playTrack();
+					}
+				
+				} else {
+				
+					System.out.println("Last track in playlist. No more songs to play");
+					jMediaButton1.setmType(JMediaButton.MediaType.PLAY);
+					jMediaButton1.repaint();
+				}
+			}
+		});
+	}
 	
 	public String formatTime(long totalSeconds) {
 		
@@ -415,9 +592,9 @@ public class Gui extends javax.swing.JFrame {
 		return String.format("%02d:%02d", m, s);
 	}
 
-	public void openFiles(File[] files) {
+	public void openFiles(File[] files, JTable table) {
 		
-		DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
 		
 		for (File file : files) {
 			
@@ -469,9 +646,9 @@ public class Gui extends javax.swing.JFrame {
 		}
 	}
 	
-	private void saveTabPlaylist(JTable table) {
+	private void saveTabPlaylist(String name, JTable table) {
 		
-		String dest = System.getProperty("user.home") + File.separator + "pl.m3u";
+		String dest = System.getProperty("user.home") + File.separator + name;
 		Path path = Paths.get(dest);
 		DefaultTableModel model = (DefaultTableModel) table.getModel();
 	
@@ -500,7 +677,7 @@ public class Gui extends javax.swing.JFrame {
 		ArrayList<File> f = new ArrayList<>();
 		
 		try {
-			Path path = Paths.get(System.getProperty("user.home"), "pl.m3u");
+			Path path = Paths.get(System.getProperty("user.home"), "Playlist_0.m3u");
 			    
 			// Reads every line into a List
 			List<String> lines = Files.readAllLines(path);
@@ -520,7 +697,41 @@ public class Gui extends javax.swing.JFrame {
 		return f.toArray(new File[0]);
 	}
 
+	private void playSelectedTrack() {
+
+			Component comp = jTabbedPane1.getSelectedComponent();
+			JScrollPane sp = (JScrollPane) comp;
+			JTable table = (JTable) sp.getViewport().getView();
+			DefaultTableModel model = (DefaultTableModel) table.getModel();
+			
+			int rowNum = table.getSelectedRow();
+			String filePath = (String) model.getValueAt(rowNum, 5);
+			AudioType aType = checkAudioType(filePath);
+			this.currentRow = rowNum;
+			this.numRows = table.getRowCount() - 1;
+
+			addSongListener();
+			
+			//  play module
+			if (aType == AudioType.MODULE) {
+				
+				audioEngine.loadFile(filePath, AudioType.MODULE);
+				audioEngine.setVolume(jSlider2.getValue());
+				this.playTrack();
+				
+			//play streamed audio file
+			} else if (aType == AudioType.STREAMED) {
+				
+				audioEngine.loadFile(filePath, AudioType.STREAMED);
+				audioEngine.setVolume(jSlider2.getValue());
+				this.playTrack();
+			}
+
+		
+	}
+	
         // Variables declaration - do not modify//GEN-BEGIN:variables
+        private javax.swing.JButton addTabButton;
         private javax.swing.JMenu fileMenu;
         private javax.swing.JFileChooser jFileChooser1;
         private JMediaButton jMediaButton1;
@@ -528,9 +739,12 @@ public class Gui extends javax.swing.JFrame {
         private JMediaButton jMediaButton3;
         private JMediaButton jMediaButton4;
         private javax.swing.JMenu jMenu2;
+        private javax.swing.JMenuItem jMenuItem1;
+        private javax.swing.JMenuItem jMenuItem2;
         private javax.swing.JPanel jPanel1;
         private javax.swing.JPanel jPanel2;
         private javax.swing.JPanel jPanel3;
+        private javax.swing.JPopupMenu jPopupMenu1;
         private javax.swing.JScrollPane jScrollPane1;
         private javax.swing.JSeparator jSeparator1;
         private javax.swing.JSlider jSlider1;
