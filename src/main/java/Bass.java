@@ -113,6 +113,8 @@ public interface Bass extends Library {
         boolean BASS_Free();
 	boolean BASS_StreamFree(int handle);
 	boolean BASS_ChannelStop(int handle);
+	boolean BASS_ChannelPause(int handle);
+	boolean BASS_ChannelStart(int handle);
 	boolean BASS_ChannelSetPosition(int handle, long pos , int mode);
 	boolean BASS_ChannelSetAttribute(int handle, int attrib, float value);
 	boolean BASS_ChannelSlideAttribute(int handle, int attrib, float value, int time);

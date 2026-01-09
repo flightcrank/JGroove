@@ -185,6 +185,22 @@ public class BassAudioEngine {
 		}
 	}
 	
+	public void pause() {
+		
+		if(!Bass.INSTANCE.BASS_ChannelPause(fileHandle)) {
+
+			System.err.println("Could not pause channel. Error: " + Bass.INSTANCE.BASS_ErrorGetCode());	
+		}
+	}
+
+	public void resume() {
+		
+		if(!Bass.INSTANCE.BASS_ChannelStart(fileHandle)) {
+			
+			System.err.println("Could not resume channel. Error: " + Bass.INSTANCE.BASS_ErrorGetCode());	
+		}
+	}
+	
 	public void stop() {
 		
 		Bass.INSTANCE.BASS_ChannelStop(fileHandle);

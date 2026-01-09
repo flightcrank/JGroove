@@ -76,13 +76,20 @@ public class Gui extends javax.swing.JFrame {
                 searchTextField = new javax.swing.JTextField();
                 menuBar = new javax.swing.JMenuBar();
                 fileMenu = new javax.swing.JMenu();
-                openFile = new javax.swing.JMenuItem();
-                jMenu2 = new javax.swing.JMenu();
+                openFileItem = new javax.swing.JMenuItem();
+                editMenu = new javax.swing.JMenu();
+                helpMenu = new javax.swing.JMenu();
+                aboutMenuItem = new javax.swing.JMenuItem();
                 jFileChooser1 = new javax.swing.JFileChooser();
                 addTabButton = new javax.swing.JButton();
                 jPopupMenu1 = new javax.swing.JPopupMenu();
                 jMenuItem1 = new javax.swing.JMenuItem();
                 jMenuItem2 = new javax.swing.JMenuItem();
+                aboutDialog = new javax.swing.JDialog();
+                jLabel1 = new javax.swing.JLabel();
+                jButton1 = new javax.swing.JButton();
+                jScrollPane2 = new javax.swing.JScrollPane();
+                jTextArea1 = new javax.swing.JTextArea();
                 jPanel1 = new javax.swing.JPanel();
                 jToolBar1 = new javax.swing.JToolBar();
                 jMediaButton1 = new JMediaButton();
@@ -112,18 +119,30 @@ public class Gui extends javax.swing.JFrame {
 
                 fileMenu.setText("File");
 
-                openFile.setText("Open File");
-                openFile.addActionListener(new java.awt.event.ActionListener() {
+                openFileItem.setText("Open File");
+                openFileItem.addActionListener(new java.awt.event.ActionListener() {
                         public void actionPerformed(java.awt.event.ActionEvent evt) {
-                                openFileActionPerformed(evt);
+                                openFileItemActionPerformed(evt);
                         }
                 });
-                fileMenu.add(openFile);
+                fileMenu.add(openFileItem);
 
                 menuBar.add(fileMenu);
 
-                jMenu2.setText("Edit");
-                menuBar.add(jMenu2);
+                editMenu.setText("Edit");
+                menuBar.add(editMenu);
+
+                helpMenu.setText("Help");
+
+                aboutMenuItem.setText("About");
+                aboutMenuItem.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                aboutMenuItemActionPerformed(evt);
+                        }
+                });
+                helpMenu.add(aboutMenuItem);
+
+                menuBar.add(helpMenu);
 
                 jFileChooser1.setFileFilter(null);
 
@@ -151,6 +170,27 @@ public class Gui extends javax.swing.JFrame {
                         }
                 });
                 jPopupMenu1.add(jMenuItem2);
+
+                aboutDialog.setPreferredSize(new java.awt.Dimension(500, 350));
+
+                jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+                jLabel1.setText("<html><h1>About</h1></html>");
+                aboutDialog.getContentPane().add(jLabel1, java.awt.BorderLayout.NORTH);
+
+                jButton1.setText("OK");
+                jButton1.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                jButton1ActionPerformed(evt);
+                        }
+                });
+                aboutDialog.getContentPane().add(jButton1, java.awt.BorderLayout.SOUTH);
+
+                jTextArea1.setColumns(20);
+                jTextArea1.setRows(5);
+                jTextArea1.setText("JGroove:\n A Java Audo file player\n\nVersion:\n 0.1.2\n\nSupported Formats: \nMP1, MP2, MP3, OGG Vorbis, FLAC, WAV, AIFF, XM, S3M, IT, MOD and more\n\nAudio Engine:\nPoweded by libbass https://www.un4seen.com/bass.html\n\nCoded By: Flightcrank \nhttps://github.com/flightcrank/JGroove\n\nLicence GPL3:\n");
+                jScrollPane2.setViewportView(jTextArea1);
+
+                aboutDialog.getContentPane().add(jScrollPane2, java.awt.BorderLayout.CENTER);
 
                 setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
                 setTitle("JGroove");
@@ -199,6 +239,11 @@ public class Gui extends javax.swing.JFrame {
                 jMediaButton3.setmType(JMediaButton.MediaType.SKIP_BACK);
                 jMediaButton3.setPreferredSize(new java.awt.Dimension(40, 40));
                 jMediaButton3.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+                jMediaButton3.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                jMediaButton3ActionPerformed(evt);
+                        }
+                });
                 jToolBar1.add(jMediaButton3);
 
                 jMediaButton4.setText("jMediaButton4");
@@ -207,6 +252,11 @@ public class Gui extends javax.swing.JFrame {
                 jMediaButton4.setmType(JMediaButton.MediaType.SKIP_FWD);
                 jMediaButton4.setPreferredSize(new java.awt.Dimension(40, 40));
                 jMediaButton4.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+                jMediaButton4.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                                jMediaButton4ActionPerformed(evt);
+                        }
+                });
                 jToolBar1.add(jMediaButton4);
 
                 jPanel1.add(jToolBar1, java.awt.BorderLayout.WEST);
@@ -351,9 +401,11 @@ public class Gui extends javax.swing.JFrame {
 		
 			@Override
 			public void actionPerformed(ActionEvent e) {
-			
+				
+				int status = audioEngine.isPlaying();
+				
 				// 1. Check if the stream is actually playing
-				if (audioEngine.isPlaying() == Bass.BASS_ACTIVE_PLAYING) {
+				if (status == Bass.BASS_ACTIVE_PLAYING || status == Bass.BASS_ACTIVE_PAUSED) {
 					
 					long currentPos = audioEngine.getPosition();
 					long totalLen = audioEngine.getLength();
@@ -367,6 +419,7 @@ public class Gui extends javax.swing.JFrame {
 				} else {
 					
 					((Timer) e.getSource()).stop();
+					jSlider1.setValue(0);
 					System.out.println("Timer stopped");
 				}
 			}
@@ -380,10 +433,28 @@ public class Gui extends javax.swing.JFrame {
 
 		if (jMediaButton1.getmType() == JMediaButton.MediaType.PLAY) {
 			
-			playSelectedTrack();
-			jMediaButton1.setmType(JMediaButton.MediaType.PAUSE);
-		}
+			int status = audioEngine.isPlaying();
+			
+			if (status == Bass.BASS_ACTIVE_STOPPED) {
+				
+				playSelectedTrack();
+				jMediaButton1.setmType(JMediaButton.MediaType.PAUSE);
+				jMediaButton1.repaint();
+			
+			} else if (status == Bass.BASS_ACTIVE_PAUSED) {
+				
+				audioEngine.resume();
+				jMediaButton1.setmType(JMediaButton.MediaType.PAUSE);
+				jMediaButton1.repaint();
+			}
 		
+		//pause button
+		} else {
+
+			audioEngine.pause();
+			jMediaButton1.setmType(JMediaButton.MediaType.PLAY);
+			jMediaButton1.repaint();
+		}
         }//GEN-LAST:event_jMediaButton1ActionPerformed
 
         private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
@@ -436,7 +507,7 @@ public class Gui extends javax.swing.JFrame {
 		audioEngine.setVolume(jSlider2.getValue());
         }//GEN-LAST:event_jSlider2StateChanged
 
-        private void openFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openFileActionPerformed
+        private void openFileItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openFileItemActionPerformed
 		
 		int result = jFileChooser1.showOpenDialog(this);
 		
@@ -449,9 +520,23 @@ public class Gui extends javax.swing.JFrame {
 			
 			openFiles(files, table);
 		}
-        }//GEN-LAST:event_openFileActionPerformed
+        }//GEN-LAST:event_openFileItemActionPerformed
 
         private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+		
+		System.out.println("row selected");
+		
+		if (audioEngine.isPlaying() != Bass.BASS_ACTIVE_PLAYING) {
+			
+			Component comp = jTabbedPane1.getSelectedComponent();
+			JScrollPane sp = (JScrollPane) comp;
+			JTable table = (JTable) sp.getViewport().getView();
+			DefaultTableModel model = (DefaultTableModel) table.getModel();
+			
+			int rowNum = table.getSelectedRow();
+			
+			currentRow = rowNum;
+		}
 		
 		if (evt.getClickCount() == 2) {
 			
@@ -514,7 +599,7 @@ public class Gui extends javax.swing.JFrame {
         }//GEN-LAST:event_jMenuItem1ActionPerformed
 
         private void jTable1MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MousePressed
-		
+	
 		if (evt.isPopupTrigger()) {
 			
 			System.out.println("popup menu tirggered");
@@ -529,6 +614,118 @@ public class Gui extends javax.swing.JFrame {
         private void jMenuItem1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jMenuItem1MouseClicked
                 // TODO add your handling code here:
         }//GEN-LAST:event_jMenuItem1MouseClicked
+
+        private void jMediaButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMediaButton4ActionPerformed
+	
+		Component comp = jTabbedPane1.getSelectedComponent();
+		JScrollPane sp = (JScrollPane) comp;
+		JTable table = (JTable) sp.getViewport().getView();
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+				
+		if (audioEngine.isPlaying() == Bass.BASS_ACTIVE_PLAYING) {
+			
+			if (currentRow < numRows) {
+						
+				currentRow++;
+				
+				String nextFilePath = (String) model.getValueAt(currentRow, 5);
+				AudioType nAType = checkAudioType(nextFilePath);
+				table.setRowSelectionInterval(currentRow, currentRow);
+
+				System.out.println("Play file: "+ nextFilePath);
+				
+				//  play module
+				if (nAType == AudioType.MODULE) {
+					
+					audioEngine.loadFile(nextFilePath, AudioType.MODULE);
+					audioEngine.setVolume(jSlider2.getValue());
+					playTrack();
+					
+				//play streamed audio file
+				} else if (nAType == AudioType.STREAMED) {
+					
+					audioEngine.loadFile(nextFilePath, AudioType.STREAMED);
+					audioEngine.setVolume(jSlider2.getValue());
+					playTrack();
+				}
+			
+			} else {
+			
+				System.out.println("Last track in playlist. No more songs to play");
+				jMediaButton1.setmType(JMediaButton.MediaType.PLAY);
+				jMediaButton1.repaint();
+			}
+		} else {
+			
+			if (currentRow < numRows - 1){
+				
+				currentRow++;	
+				table.setRowSelectionInterval(currentRow, currentRow);
+			}
+		}
+        }//GEN-LAST:event_jMediaButton4ActionPerformed
+
+        private void jMediaButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMediaButton3ActionPerformed
+
+		Component comp = jTabbedPane1.getSelectedComponent();
+		JScrollPane sp = (JScrollPane) comp;
+		JTable table = (JTable) sp.getViewport().getView();
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+				
+		if (audioEngine.isPlaying() == Bass.BASS_ACTIVE_PLAYING) {
+			
+			if (currentRow > 0) {
+						
+				currentRow--;
+				
+				String nextFilePath = (String) model.getValueAt(currentRow, 5);
+				AudioType nAType = checkAudioType(nextFilePath);
+				table.setRowSelectionInterval(currentRow, currentRow);
+
+				System.out.println("Play file: "+ nextFilePath);
+				
+				//  play module
+				if (nAType == AudioType.MODULE) {
+					
+					audioEngine.loadFile(nextFilePath, AudioType.MODULE);
+					audioEngine.setVolume(jSlider2.getValue());
+					playTrack();
+					
+				//play streamed audio file
+				} else if (nAType == AudioType.STREAMED) {
+					
+					audioEngine.loadFile(nextFilePath, AudioType.STREAMED);
+					audioEngine.setVolume(jSlider2.getValue());
+					playTrack();
+				}
+			
+			} else {
+			
+				System.out.println("First track in playlist. No more songs before this one to play");
+				jMediaButton1.setmType(JMediaButton.MediaType.PLAY);
+				jMediaButton1.repaint();
+			}
+		} else {
+			
+			if (currentRow > 0){
+				
+				currentRow--;	
+				table.setRowSelectionInterval(currentRow, currentRow);
+			}
+		}
+        }//GEN-LAST:event_jMediaButton3ActionPerformed
+
+        private void aboutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aboutMenuItemActionPerformed
+		
+		aboutDialog.pack();
+		aboutDialog.setLocationRelativeTo(null);
+		aboutDialog.setVisible(true);
+        }//GEN-LAST:event_aboutMenuItemActionPerformed
+
+        private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+		
+		aboutDialog.setVisible(false);
+        }//GEN-LAST:event_jButton1ActionPerformed
 
 	private void addSongListener() {
 		
@@ -731,14 +928,19 @@ public class Gui extends javax.swing.JFrame {
 	}
 	
         // Variables declaration - do not modify//GEN-BEGIN:variables
+        private javax.swing.JDialog aboutDialog;
+        private javax.swing.JMenuItem aboutMenuItem;
         private javax.swing.JButton addTabButton;
+        private javax.swing.JMenu editMenu;
         private javax.swing.JMenu fileMenu;
+        private javax.swing.JMenu helpMenu;
+        private javax.swing.JButton jButton1;
         private javax.swing.JFileChooser jFileChooser1;
+        private javax.swing.JLabel jLabel1;
         private JMediaButton jMediaButton1;
         private JMediaButton jMediaButton2;
         private JMediaButton jMediaButton3;
         private JMediaButton jMediaButton4;
-        private javax.swing.JMenu jMenu2;
         private javax.swing.JMenuItem jMenuItem1;
         private javax.swing.JMenuItem jMenuItem2;
         private javax.swing.JPanel jPanel1;
@@ -746,14 +948,16 @@ public class Gui extends javax.swing.JFrame {
         private javax.swing.JPanel jPanel3;
         private javax.swing.JPopupMenu jPopupMenu1;
         private javax.swing.JScrollPane jScrollPane1;
+        private javax.swing.JScrollPane jScrollPane2;
         private javax.swing.JSeparator jSeparator1;
         private javax.swing.JSlider jSlider1;
         private javax.swing.JSlider jSlider2;
         private javax.swing.JTabbedPane jTabbedPane1;
         private javax.swing.JTable jTable1;
+        private javax.swing.JTextArea jTextArea1;
         private javax.swing.JToolBar jToolBar1;
         private javax.swing.JMenuBar menuBar;
-        private javax.swing.JMenuItem openFile;
+        private javax.swing.JMenuItem openFileItem;
         private javax.swing.JTextField searchTextField;
         // End of variables declaration//GEN-END:variables
 }
