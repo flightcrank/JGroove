@@ -21,6 +21,7 @@ import javax.swing.Timer;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import org.jaudiotagger.audio.AudioFile;
 import org.jaudiotagger.audio.AudioFileIO;
 import org.jaudiotagger.tag.FieldKey;
@@ -55,6 +56,7 @@ public class Gui extends javax.swing.JFrame {
 		centerRenderer.setHorizontalAlignment(javax.swing.JLabel.CENTER);
 		jTable1.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
 		jTable1.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
+		jTable1.setTransferHandler(new TableRowTransferHandler());
 			
 		FileNameExtensionFilter ff = new FileNameExtensionFilter("Audio Files", "wav", "mp3", "ogg", "flac", "mod", "xm", "s3m", "it");
 		jFileChooser1.setFileFilter(ff);
@@ -170,8 +172,6 @@ public class Gui extends javax.swing.JFrame {
                         }
                 });
                 jPopupMenu1.add(jMenuItem2);
-
-                aboutDialog.setPreferredSize(new java.awt.Dimension(500, 350));
 
                 jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
                 jLabel1.setText("<html><h1>About</h1></html>");
@@ -312,6 +312,8 @@ public class Gui extends javax.swing.JFrame {
                         }
                 });
                 jTable1.setDoubleBuffered(true);
+                jTable1.setDragEnabled(true);
+                jTable1.setDropMode(javax.swing.DropMode.INSERT_ROWS);
                 jTable1.setRowHeight(25);
                 jTable1.setShowGrid(false);
                 jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -372,6 +374,15 @@ public class Gui extends javax.swing.JFrame {
                         table.getColumnModel().getColumn(4).setMinWidth(50);
                         table.getColumnModel().getColumn(4).setMaxWidth(100);
                 }	
+		
+		TableColumn col = table.getColumnModel().getColumn(5);	
+		table.removeColumn(col);
+		
+		//center text in column
+		javax.swing.table.DefaultTableCellRenderer centerRenderer = new javax.swing.table.DefaultTableCellRenderer();
+		centerRenderer.setHorizontalAlignment(javax.swing.JLabel.CENTER);
+		table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+		table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer);
 	}
 	
 	private AudioType checkAudioType(String filePath) {
@@ -559,6 +570,8 @@ public class Gui extends javax.swing.JFrame {
 			
 			JTable newTable = new JTable();
 			setPlaylistmodel(newTable);
+			//TableColumnModel view = jTable1.getColumnModel();
+			//newTable.setColumnModel(view);
 			JScrollPane scrollPane = new JScrollPane(newTable);
 
 			newTable.addMouseListener(new java.awt.event.MouseAdapter() {
